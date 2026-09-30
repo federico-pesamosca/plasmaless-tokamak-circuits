@@ -69,4 +69,4 @@ The simulation and tests require MATLAB, Simulink, IMAS, and access to the IDS d
 
 ## Licence
 
-This software is open source. ITER-related intellectual property remains © ITER Organization.
+This software is open source. ITER-related intellectual property remains © 2026 ITER Organization.
