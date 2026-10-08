@@ -4,6 +4,9 @@
 
 clear 
 
+%% flag for executing matlab or simulink mode
+mode = 'matlab'; % 'matlab' or 'simulink'
+
 %% simulation parameters
 tstart = 0;
 tend = 28;
@@ -17,7 +20,12 @@ TS = timeseries_plasmaless_model(tstart,tend,dt);
 x0 = zeros(size(A,1),1);
 
 %% run model
-out = sim('simulator_plasmaless_model.slx');
-out.signalNames = out_label;
+switch mode
+    case 'simulink'
+        out = sim('simulator_plasmaless_model_simulink.slx');
+        out.signalNames = out_label;
+    case 'matlab'
+        out = simulator_plasmaless_model_matlab(TS,A,B,C,D,x0,out_label);
+end
 %% plot model
 plot_plasmaless_model;
