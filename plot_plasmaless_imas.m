@@ -1,19 +1,28 @@
 % plot coil and passive loop currents after run_plasmaless_imas
-% (uses time, Ia, Ie, model from the workspace, or loads results_file)
+% (uses time, Ia, Ie, model from the workspace, or loads results_file).
+% Also plots the results of run_plasmaless_model (Simulink) and of the MUSCLE3
+% standalone test (same layout): set results_file before calling, e.g.
+%   results_file = 'plasmaless_simulink_results.mat'; plot_plasmaless_imas
+%   results_file = 'plasmaless_muscle3_results.mat'; plot_plasmaless_imas
+% (default: plasmaless_imas_results.mat in the repository root; a relative
+% name is taken in the current directory).
 % Panels: (a) CS/PF superconducting coils [A], (b) VS resistive coils [kA],
 % (c) passive loops [kA]. Coils are grouped by name (names starting with 'VS').
 % Figures hang with MATLAB R2025b on the SDCC login nodes: run this script in
 % MATLAB R2024b (module load MATLAB/2024b-r5), it then loads results_file.
 
-if ~exist('results_file','var')
-    results_file = '/scratch/users/schneim/plasmaless/plasmaless_imas_results.mat';
-end
-if ~exist('time','var') || ~exist('Ia','var') || ~exist('Ie','var')
+if exist('results_file','var')
+    % a results_file set in the workspace is always loaded (no stale data)
     fprintf('Loading results from %s\n', results_file);
     load(results_file,'time','Ia','Ie','coil_names');
-end
-if exist('model','var')
-    coil_names = model.coil_names;
+else
+    results_file = fullfile(fileparts(mfilename('fullpath')),'plasmaless_imas_results.mat');
+    if ~exist('time','var') || ~exist('Ia','var') || ~exist('Ie','var')
+        fprintf('Loading results from %s\n', results_file);
+        load(results_file,'time','Ia','Ie','coil_names');
+    elseif exist('model','var')
+        coil_names = model.coil_names;
+    end
 end
 coil_names = cellstr(coil_names);
 
@@ -32,7 +41,8 @@ ax_a = subplot(3,1,1);
 plot_distinct(td, Ia(1:step:end,i_sc));
 xlabel('Time [s]'); ylabel('Current [A]');
 legend(coil_names(i_sc),'Location','eastoutside','Interpreter','none');
-title('(a) CS/PF superconducting coil currents (IMAS interface)');
+[~, results_name] = fileparts(results_file);
+title(sprintf('(a) CS/PF superconducting coil currents (%s)', results_name),'Interpreter','none');
 grid on;
 
 ax_b = subplot(3,1,2);

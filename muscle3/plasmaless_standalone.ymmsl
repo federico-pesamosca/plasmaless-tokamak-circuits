@@ -1,0 +1,66 @@
+# Standalone MUSCLE3 test of the plasmaless actor (no PDS, no PCS controller):
+# voltage_driver.py applies the pulse train of run_plasmaless_imas.m through the
+# actor; its results file has the run_plasmaless_imas.m layout.
+# Run with run_plasmaless_muscle3.sh: it sets PLASMALESS_REPO to this repository and
+# adds a settings file in the run directory with absolute repository paths:
+# driver.md_uri (data/md_dd4) and driver.results_file (plasmaless_muscle3_results.mat
+# in the repository root). The actor uses its md_uri default (the same data/md_dd4).
+ymmsl_version: v0.2
+
+programs:
+  voltage_driver:
+    script: |
+      #!/bin/bash
+      plasmaless_repo="${PLASMALESS_REPO:-/home/ITER/schneim/public/git/plasmaless-tokamak-circuits}"
+      module purge
+      module load IMAS-MUSCLE3/1.0.0-intel-2025b-pds
+      exec python -u "$plasmaless_repo/muscle3/voltage_driver.py"
+
+  # same commands as the PDS program plasmaless (IMAS-PDS
+  # workflows/lib/easybuild_programs.ymmsl): PCS module for its muscle3 venv,
+  # os._exit(0) because MATLAB R2025b + IMAS-MATLAB 5.6.0 segfaults at exit
+  # after reading an imas:hdf5 entry
+  plasmaless:
+    script: |
+      #!/bin/bash
+      plasmaless_repo="${PLASMALESS_REPO:-/home/ITER/schneim/public/git/plasmaless-tokamak-circuits}"
+      module purge
+      module load PCS/2026.08-pds
+      module load IMAS-MATLAB/5.6.0-intel-2025b-DD-4.1.1
+      unset PYTHONPATH
+      exec matlab -singleCompThread -batch "pyenv('Version','$EBROOTPCS/muscle3_venv/bin/python','ExecutionMode','InProcess');addpath('$plasmaless_repo/muscle3');muscle_plasmaless_actor;pyrun('import os; os._exit(0)');"
+
+models:
+  plasmaless_standalone:
+    description: plasmaless actor driven by the run_plasmaless_imas.m voltage pulse train
+    components:
+      driver:
+        description: sends F_INIT and the pulse-train voltages, saves the currents
+        implementation: voltage_driver
+        ports:
+          o_i: [equilibrium_out, pf_active_out, voltages_out]
+          s: [equilibrium_in, pf_active_in, pf_passive_in]
+      plasmaless:
+        description: plasmaless coil+vessel model actor (muscle_plasmaless_actor.m)
+        implementation: plasmaless
+        ports:
+          f_init: [equilibrium_f_init, pf_active_f_init]
+          s: [pf_active_s]
+          o_i: [equilibrium_o_i, pf_active_o_i, pf_passive_o_i]
+    conduits:
+      driver.equilibrium_out: plasmaless.equilibrium_f_init
+      driver.pf_active_out: plasmaless.pf_active_f_init
+      plasmaless.equilibrium_o_i: driver.equilibrium_in
+      plasmaless.pf_active_o_i: driver.pf_active_in
+      plasmaless.pf_passive_o_i: driver.pf_passive_in
+      driver.voltages_out: plasmaless.pf_active_s
+
+settings:
+  # shared by the driver and the actor; run_plasmaless_imas.m uses dt = 0.001
+  dt: 0.01
+  t_interval: 0.01      # must equal dt
+  t_end: 28.0
+
+resources:
+  plasmaless_standalone.driver: {threads: 1}
+  plasmaless_standalone.plasmaless: {threads: 1}

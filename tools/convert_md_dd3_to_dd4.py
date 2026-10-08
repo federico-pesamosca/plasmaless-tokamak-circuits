@@ -7,9 +7,12 @@ configure_plasmaless_model.m, converts them to DD 4.1.1 and writes:
 - pf_active: coil description only (time-dependent data removed),
 - pf_passive: loop description.
 The written entry is reread and compared with the DD3 source.
+Default output: data/md_dd4 of this repository (the entry shipped with the model,
+used by run_plasmaless_imas.m and the MUSCLE3 actor); --output-uri writes elsewhere.
 """
 
 import argparse
+from pathlib import Path
 
 import imas
 import numpy as np
@@ -18,7 +21,7 @@ from imas.util import tree_iter
 DD_VERSION = "4.1.1"
 DINA_URI = "imas:mdsplus?path=/work/projects/dina/SRO_JINTRAC/15MA_10perc/output"
 PF_PASSIVE_URI = "imas:mdsplus?path=/work/imas/shared/imasdb/ITER_MD/3/115005/3"
-OUTPUT_URI = "imas:hdf5?path=/scratch/users/schneim/plasmaless/md_dd4"
+OUTPUT_URI = f"imas:hdf5?path={Path(__file__).resolve().parents[1] / 'data' / 'md_dd4'}"
 
 # name, DD3 field, rows_uri node, columns_uri node
 # (rows_uri/columns_uri list every index: the DD validation requires their

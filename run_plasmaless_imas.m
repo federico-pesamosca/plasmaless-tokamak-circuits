@@ -11,7 +11,8 @@ clearvars -except do_plot
 if ~exist('do_plot','var'), do_plot = 0; end
 
 % IMAS interface functions in imas_model/ (next to this script)
-addpath(fullfile(fileparts(mfilename('fullpath')),'imas_model'));
+repo_root = fileparts(mfilename('fullpath'));
+addpath(fullfile(repo_root,'imas_model'));
 
 %% simulation parameters
 tstart = 0;
@@ -19,11 +20,12 @@ tend = 28;
 dt = 0.001;
 write_output = 0;   % 1: write the output slices to out_uri
 out_uri = 'imas:hdf5?path=/scratch/users/schneim/plasmaless/run_out';
-results_file = '/scratch/users/schneim/plasmaless/plasmaless_imas_results.mat';  % saved time, Ia, Ie, names
+results_file = fullfile(repo_root,'plasmaless_imas_results.mat');  % saved time, Ia, Ie, names
 
 %% load machine description
-% DD4 entry made with tools/convert_md_dd3_to_dd4.py (IMAS-MATLAB DD-4.x module)
-md_uri = 'imas:hdf5?path=/scratch/users/schneim/plasmaless/md_dd4';
+% DD4 entry shipped in data/md_dd4, made with tools/convert_md_dd3_to_dd4.py
+% (IMAS-MATLAB DD-4.x module)
+md_uri = ['imas:hdf5?path=' fullfile(repo_root,'data','md_dd4')];
 fprintf('Loading machine description from %s\n', md_uri);
 idx = imas_open(md_uri,40);
 em_coupling = ids_get(idx,'em_coupling');
