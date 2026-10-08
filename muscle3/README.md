@@ -3,8 +3,9 @@
 `muscle_plasmaless_actor.m` wraps the IMAS interface of the model (`../imas_model/`) as a
 MUSCLE3 (libmuscle 0.10, Python in-process from MATLAB) actor. It stands in for NICE
 direct evolutive (`nice_evo_rd`) in controller tests. In IMAS-PDS it is the program
-`plasmaless` (`workflows/lib/easybuild_programs.ymmsl`), used by the workflow
-`plasmaless_controller`.
+`plasmaless` (`workflows/lib/local_programs.ymmsl`), used by the workflow
+`plasmaless_controller`; PDS installs this repository into
+`local_installs/plasmaless-tokamak-circuits` with `setup_files/setup_plasmaless.sh`.
 
 ## Ports
 
@@ -61,10 +62,20 @@ with the former VSU/VSL name mapping,
 20 steps): 20 exchanges, first output at t0 + 0.01, last with next_timestamp None, and
 coil currents identical to direct `plasmaless_step_ids` calls.
 
-Tested again in the `plasmaless_controller` configuration for shot 105084 (source and
-waveform_editor as in the PDS case, dummy controller, t0 = 136.2276 s, dt 0.005,
-t_end = t0 + 0.02): 4 exchanges; the F_INIT equilibrium and pf_active received by the
-controller equal the NICE inverse output (`nice_out`) exactly.
+Earlier test (historical, when the PDS workflow still ran `waveform_editor` inside the
+workflow) for shot 105084: source and waveform_editor, dummy controller,
+t0 = 136.2276 s, dt 0.005, t_end = t0 + 0.02: 4 exchanges; the F_INIT equilibrium and
+pf_active received by the controller equal the NICE inverse output (`nice_out`) exactly.
+
+In the current PDS `plasmaless_controller` workflow (IMAS-PDS,
+`workflows/plasmaless_controller/`), the Waveform-Editor runs once at case creation
+(`preprocess.sh`, writes `<case>/preprocess/initial_state` from `nice_out`); `source`
+reads that entry and sends the F_INIT equilibrium and pf_active directly to
+`magnetic_controller` and `plasmaless`, and a `recorder_plasmaless` component
+(`visualization/plasmaless_currents.py`) shows live coil/passive-current figures in
+m3dash. Slurm run with the PCS controller, shot 105084, t_end 160
+(`cases/runs/plasmaless_controller_105084_20261008_200304`): 4754 exchanges, finished
+without error.
 
 ## Standalone test
 

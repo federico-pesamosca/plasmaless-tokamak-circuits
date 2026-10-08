@@ -4,12 +4,23 @@ A dynamical circuit model of the current response of ITER coils and vessel condu
 
 ## Installation
 
-Clone the repository on ITER SDCC and load the required modules:
+The original model lives at https://github.com/federico-pesamosca/plasmaless-tokamak-circuits. The IMAS interface, the MUSCLE3 actor and the DD4 machine description (`data/md_dd4`) are on branch `IMAS_Muscle3` of a fork; clone that version on ITER SDCC:
 
 ```bash
-git clone https://github.com/federico-pesamosca/plasmaless-tokamak-circuits.git
-module load IMAS/3.39.0-foss-2023b
-module load MATLAB/2023a-r8-GCCcore-13.2.0
+git clone -b IMAS_Muscle3 https://github.com/MireilleSchneider/plasmaless-tokamak-circuits.git
+```
+
+Load the module matching what you run (see also `howto.txt`):
+
+```bash
+# IMAS version (run_plasmaless_imas)
+module purge; module load IMAS-MATLAB/5.6.0-intel-2025b-DD-4.1.1
+# original Simulink version (run_plasmaless_model; reads the DD3 em_coupling fields)
+module purge; module load IMAS-MATLAB/5.6.0-intel-2025b-DD-3.42.2
+# plotting (plot_plasmaless_imas): figures hang with MATLAB R2025b on the SDCC login nodes
+module purge; module load MATLAB/2024b-r5
+# MUSCLE3 standalone run (loads its own modules)
+muscle3/run_plasmaless_muscle3.sh
 ```
 
 No separate installation is required. The scripts retrieve local IDS data for circuit parameters and geometry, so the required IDS data must be accessible from your environment.
