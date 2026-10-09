@@ -13,9 +13,9 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
     % 1) test_basic_run: configure, simulate and plot without warnings.
     % 2) test_matlab_simulink_equivalence: compare MATLAB and Simulink
     %    using timeseries_plasmaless_model and the run script's timing
-    % 2) test_superconductive_coil: check CS3U/PF1 step currents and
+    % 3) test_superconductive_coil: check CS3U/PF1 step currents and
     %    the superconductive and full-circuit bounds on current slope.
-    % 3) test_resistive_coil: apply 5 V to coils 13/14 for 3 s; check
+    % 4) test_resistive_coil: apply 5 V to coils 13/14 for 3 s; check
     %    settling to V/R and constant tail currents in coils 1-12.
 
     properties
