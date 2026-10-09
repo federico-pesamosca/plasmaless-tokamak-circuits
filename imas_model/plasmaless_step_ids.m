@@ -27,8 +27,9 @@ for ii = 1:model.n_coils
     u(ii) = v;
 end
 
-% state update
-x_new = model.A*x + model.B*u;
+% state update: use the same function of simulator_plamaless_model (matlab/simulink)
+% x_new = model.A*x + model.B*u;
+[~,x_new] = plasmaless_timestep_forward(u,x,model.A,model.B,model.C,model.D);
 
 % outputs
 pf_active_out = ids_init('pf_active');
