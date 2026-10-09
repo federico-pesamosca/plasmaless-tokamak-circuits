@@ -4,10 +4,10 @@ A dynamical circuit model of the current response of ITER coils and vessel condu
 
 ## Installation
 
-The original model lives at https://github.com/federico-pesamosca/plasmaless-tokamak-circuits. The IMAS interface, the MUSCLE3 actor and the DD4 machine description (`data/md_dd4`) are on branch `IMAS_Muscle3` of a fork; clone that version on ITER SDCC:
+The original model lives at https://github.com/federico-pesamosca/plasmaless-tokamak-circuits. The IMAS interface, the MUSCLE3 actor and the DD4 machine description (`data/md_dd4`) are on branch `IMAS_Muscle3` clone that version on ITER SDCC:
 
 ```bash
-git clone -b IMAS_Muscle3 https://github.com/MireilleSchneider/plasmaless-tokamak-circuits.git
+git clone -b IMAS_Muscle3 https://github.com/federico-pesamosca/plasmaless-tokamak-circuits.git
 ```
 
 Load the module matching what you run (see also `howto.txt`):
@@ -41,20 +41,29 @@ where **Mxi** is the Green’s-function matrix mapping conductor currents to flu
 
 The Simulink model `plasmaless_timestep.slx` is included as a referenced model in `simulator_plasmaless_model.slx`. It evolves the circuit response to an input voltage time series Va.
 
-## Use
+## MATLAB/Simulink basic simulation
 
-- **Run the simulation:** `run_plasmaless_model.m` configures and runs `simulator_plasmaless_model.slx` (IMAS-MATLAB DD-3.x module: it reads the DD3 `em_coupling` fields), saves `time`, `Ia`, `Ie` and the coil/loop names to `plasmaless_simulink_results.mat` in the repository root (same variables, units and names as `run_plasmaless_imas.m`), and plots the results with `plot_plasmaless_model.m` if `do_plot = 1` is set before the call (default 0, see below). Adapt it to set the simulation parameters and input for your application. Only required parameters
+- **Run the simulation:** `run_plasmaless_model.m` configures and runs `simulator_plasmaless_model.slx` (IMAS-MATLAB DD-3.x module: it reads the DD3 `em_coupling` fields), saves `time`, `Ia`, `Ie` and the coil/loop names to `plasmaless_simulink_results.mat` in the repository root (same variables, units and names as `run_plasmaless_imas.m`), and plots the results with `plot_plasmaless_model.m` if `do_plot = 1` is set before the call (default 0, see below). Adapt it to set the simulation parameters and input for your application.
+  Set `mode` inside `run_plasmaless_model.m` to select the simulator:
+  ```matlab
+  mode = 'matlab';    % MATLAB simulation loop (default)
+  % or
+  mode = 'simulink';  % Simulink simulation
+  ```
+  Only required parameters
   - dt: discretization time
   - tstart: start of simulation
   - tend: end of simulation
+    
 - **Prepare inputs:** `timeseries_plasmaless_model.m` illustrates the structure and format used to create the input voltage time series.
 - **Visualize results:** `plot_plasmaless_model.m` plots coil-voltage and current histories and animates the dynamic flux on the DINA grid.
-- **Run regression tests:** `tests/test_plasmaless_model.m` contains three tests:
+- **Run regression tests:** `tests/test_plasmaless_model.m` contains four tests:
   - a basic run of the scripts
   - the expected response to voltage steps in two superconductive coils
-  - the expected response to voltage steps in two resistive coils.
+  - the expected response to voltage steps in two resistive coils
+  - MATLAB–Simulink output equivalence for the same input waveform and timing, checking matching timestamps and all active/passive current samples within numerical tolerance.
 
-The simulation and tests require MATLAB, Simulink, IMAS, and access to the IDS data used by the scripts.
+Both simulation modes require MATLAB, Control System Toolbox (for `ss` and `c2d`), IMAS, and access to the IDS data used by the configuration and plotting scripts. Simulink is additionally required for Simulink mode and for running the full regression test suite.
 
 ## IMAS interface (imas_model/)
 
@@ -91,3 +100,5 @@ This software is open source. ITER-related intellectual property remains &copy; 
 ## Contacts
 
 Originally developed in 2026 by Federico Pesamosca (federico.pesamosca@iter.org)
+
+IMAS interfacing and MUSCLE3 adaptation by Mireille Schneider (mireille.schneider@iter.org)
