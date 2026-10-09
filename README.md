@@ -42,7 +42,8 @@ where **Mxi** is the Green’s-function matrix mapping conductor currents to flu
 The Simulink model `plasmaless_timestep.slx` is included as a referenced model in `simulator_plasmaless_model.slx`. It evolves the circuit response to an input voltage time series Va.
 
 ## MATLAB/Simulink basic simulation
-
+- **Add the local paths**
+run `add_plasmaless_paths.m` to add the local subfolders.
 - **Run the simulation:** `run_plasmaless_model.m` configures and runs `simulator_plasmaless_model.slx` (IMAS-MATLAB DD-3.x module: it reads the DD3 `em_coupling` fields), saves `time`, `Ia`, `Ie` and the coil/loop names to `plasmaless_simulink_results.mat` in the repository root (same variables, units and names as `run_plasmaless_imas.m`), and plots the results with `plot_plasmaless_model.m` if `do_plot = 1` is set before the call (default 0, see below). Adapt it to set the simulation parameters and input for your application.
   Set `mode` inside `run_plasmaless_model.m` to select the simulator:
   ```matlab
