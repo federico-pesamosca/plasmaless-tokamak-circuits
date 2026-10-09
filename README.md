@@ -17,6 +17,10 @@ Load the module matching what you run (see also `howto.txt`):
 module purge; module load IMAS-MATLAB/5.6.0-intel-2025b-DD-4.1.1
 # original Simulink version (run_plasmaless_model; reads the DD3 em_coupling fields)
 module purge; module load IMAS-MATLAB/5.6.0-intel-2025b-DD-3.42.2
+(or better)
+module purge
+module load IMAS/3.39.0-foss-2023b
+module load MATLAB/2023a-r8-GCCcore-13.2.0
 # plotting (plot_plasmaless_imas): figures hang with MATLAB R2025b on the SDCC login nodes
 module purge; module load MATLAB/2024b-r5
 # MUSCLE3 standalone run (loads its own modules)

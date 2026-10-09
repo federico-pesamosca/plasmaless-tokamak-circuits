@@ -9,13 +9,17 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
     % with evalin('base', ...) so they see exactly the same context as
     % when run manually.
     %
-    % Tests are kept short (small tend, few frames) so they run fast.
-    % Three main tests
-    % 1) test_basic_run (run all the scripts)
-    % 2) test_superconductive_coil (expected step response for CS3U/PF1)
-    % 3) test_resistive_coils (expected step resp for VS3)
+    % Test coverage:
+    % 1) test_basic_run: configure, simulate and plot without warnings.
+    % 2) test_matlab_simulink_equivalence: compare MATLAB and Simulink
+    %    using timeseries_plasmaless_model and the run script's timing
+    % 2) test_superconductive_coil: check CS3U/PF1 step currents and
+    %    the superconductive and full-circuit bounds on current slope.
+    % 3) test_resistive_coil: apply 5 V to coils 13/14 for 3 s; check
+    %    settling to V/R and constant tail currents in coils 1-12.
+
     properties
-        modelName = 'simulator_plasmaless_model';
+        modelName = 'simulator_plasmaless_model_simulink';
         rootDir
     end
 
@@ -51,7 +55,7 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
             assignin('base','dt',0.01);
 
             evalin('base', ...
-                ['[sysd_plasmaless,A,B,C,D,InBus_plasmaless,OutBus_plasmaless] = ', ...
+                ['[sysd_plasmaless,A,B,C,D,in_label,out_label] = ', ...
                  'configure_plasmaless_model(dt);']);
 
             evalin('base', ...
@@ -61,7 +65,7 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
             % --- run model ---
             testCase.verifyWarningFree( ...
                 @() evalin('base', ...
-                    "out = sim('simulator_plasmaless_model.slx');"), ...
+                    "out = sim('simulator_plasmaless_model_simulink.slx');"), ...
                 'Simulink simulation raised a warning.');
 
             % sanity check on simulation output
@@ -74,6 +78,66 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
             testCase.verifyWarningFree( ...
                 @() evalin('base','plot_plasmaless_model;'), ...
                 'Plotting routine raised a warning.');
+        end
+
+        function test_matlab_simulink_equivalence(testCase)
+            % Match the timing in run_plasmaless_model.m. Both simulators
+            % receive the same sampled voltages, matrices and initial state.
+            assignin('base','tstart',0);
+            assignin('base','tend',28);
+            assignin('base','dt',0.001);
+            evalin('base', ...
+                ['[sysd_plasmaless,A,B,C,D,in_label,out_label] = ', ...
+                 'configure_plasmaless_model(dt);']);
+            evalin('base', ...
+                'TS = timeseries_plasmaless_model(tstart,tend,dt);');
+            evalin('base','x0 = zeros(size(A,1),1);');
+
+            testCase.verifyWarningFree( ...
+                @() evalin('base', ...
+                    "out_simulink = sim('simulator_plasmaless_model_simulink.slx');"), ...
+                'Simulink simulation raised a warning in the comparison test.');
+            testCase.verifyWarningFree( ...
+                @() evalin('base', ...
+                    ['out_matlab = simulator_plasmaless_model_matlab(', ...
+                     'TS,A,B,C,D,x0,out_label);']), ...
+                'MATLAB simulation raised a warning in the comparison test.');
+
+            outSimulink = evalin('base','out_simulink');
+            outMatlab = evalin('base','out_matlab');
+            TS = evalin('base','TS');
+            simulinkTime = outSimulink.simout.Time(:);
+            matlabTime = outMatlab.simout.Time(:);
+            simulinkData = outSimulink.simout.Data;
+            matlabData = outMatlab.simout.Data;
+
+            % Compare the original sample grids: no interpolation or shifts
+            % that could hide an off-by-one timestep error.
+            testCase.assertEqual(size(simulinkTime), size(TS.Time));
+            testCase.assertEqual(size(matlabTime), size(TS.Time));
+            testCase.assertEqual(simulinkTime, TS.Time, 'AbsTol', 1e-10);
+            testCase.assertEqual(matlabTime, TS.Time, 'AbsTol', 1e-10);
+            testCase.assertEqual(size(simulinkData), size(matlabData));
+            testCase.assertEqual(size(matlabData), ...
+                [numel(TS.Time), evalin('base','size(C,1)')]);
+            testCase.assertTrue(all(isfinite(simulinkData(:))), ...
+                'Simulink output contains nonfinite currents.');
+            testCase.assertTrue(all(isfinite(matlabData(:))), ...
+                'MATLAB output contains nonfinite currents.');
+
+            % Check every sample of every active and passive current.
+            % Absolute slack protects zero crossings; relative slack allows
+            % small floating-point differences in larger current values.
+            tol_abs = 1e-8; % [A]
+            tol_rel = 1e-8;
+            labels = evalin('base','out_label');
+            for k = 1:size(matlabData,2)
+                error = abs(simulinkData(:,k) - matlabData(:,k));
+                tolerance = tol_abs + tol_rel*abs(matlabData(:,k));
+                testCase.verifyLessThanOrEqual(max(error ./ tolerance), 1, ...
+                    sprintf(['Output %s: MATLAB/Simulink mismatch ', ...
+                    '(max absolute error %.6g A).'], labels{k}, max(error)));
+            end
         end
 
         function test_superconductive_coil(testCase)
@@ -91,7 +155,7 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
             assignin('base','dt',0.05); % coarser dt -> fast test
 
             evalin('base', ...
-                ['[sysd_plasmaless,A,B,C,D,InBus_plasmaless,OutBus_plasmaless] = ', ...
+                ['[sysd_plasmaless,A,B,C,D,in_label,out_label] = ', ...
                  'configure_plasmaless_model(dt);']);
             evalin('base','x0 = zeros(size(A,1),1);');
 
@@ -124,7 +188,7 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
 
                 testCase.verifyWarningFree( ...
                     @() evalin('base', ...
-                        "out = sim('simulator_plasmaless_model.slx');"), ...
+                        "out = sim('simulator_plasmaless_model_simulink.slx');"), ...
                     sprintf('Simulation raised a warning for coil %s.', coilName{1}));
 
                 out = evalin('base','out');
@@ -220,7 +284,7 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
             assignin('base','tend',tend);
             assignin('base','dt',dt);
             evalin('base', ...
-                ['[sysd_plasmaless,A,B,C,D,InBus_plasmaless,OutBus_plasmaless] = ', ...
+                ['[sysd_plasmaless,A,B,C,D,in_label,out_label] = ', ...
                  'configure_plasmaless_model(dt);']);
             evalin('base','x0 = zeros(size(A,1),1);');
 
@@ -242,7 +306,7 @@ classdef test_plasmaless_model < matlab.unittest.TestCase
             assignin('base','TS',TS);
             testCase.verifyWarningFree( ...
                 @() evalin('base', ...
-                    "out = sim('simulator_plasmaless_model.slx');"), ...
+                    "out = sim('simulator_plasmaless_model_simulink.slx');"), ...
                 'Simulation raised a warning for the resistive-coil step.');
 
             out = evalin('base','out');
