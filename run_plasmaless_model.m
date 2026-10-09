@@ -10,7 +10,7 @@ clearvars -except do_plot
 if ~exist('do_plot','var'), do_plot = 0; end
 
 %% flag for executing matlab or simulink mode
-mode = 'simulink'; % 'matlab' or 'simulink'
+mode = 'matlab'; % 'matlab' or 'simulink'
 
 %% simulation parameters
 tstart = 0;
@@ -47,7 +47,7 @@ pf_active = ids_get(ids_idx,'pf_active');
 imas_close(ids_idx);
 coil_names = cellfun(@(c) strtrim(c.identifier), pf_active.coil(1:n_coils)', 'UniformOutput', false);
 loop_names = regexprep(out_label(n_coils+1:end),'^Ie','');
-results_file = fullfile(fileparts(mfilename('fullpath')),'plasmaless_simulink_results.mat');
+results_file = fullfile(fileparts(mfilename('fullpath')),'plasmaless_matlab_results.mat');
 save(results_file,'time','Ia','Ie','coil_names','loop_names','-v7');
 fprintf('Results saved to %s\n', results_file);
 
